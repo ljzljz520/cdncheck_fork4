@@ -1,5 +1,7 @@
 package generate
 
+import "github.com/projectdiscovery/cdncheck"
+
 // Categories contains various cdn, waf, cloud and fqdn operators
 type Categories struct {
 	// CDN contains a list of inputs for CDN cidrs
@@ -9,6 +11,9 @@ type Categories struct {
 	// Cloud contains a list of inputs for Cloud cidrs
 	Cloud  *Category `yaml:"cloud"`
 	Common *Category `yaml:"common"`
+	// Identity contains the optional unified identity directory. When it is
+	// absent or partial, the built-in default directory is used as base.
+	Identity *cdncheck.IdentityDirectory `yaml:"identity"`
 }
 
 // Category contains configuration for a specific category

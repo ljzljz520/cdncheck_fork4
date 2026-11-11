@@ -5779,3 +5779,281 @@ common:
     - arvancloud.ru
     baidu:
     - shifen.com
+# identity is the unified product identity directory. CIDR source keys,
+# common suffix sources and wappalyzer technologies are all resolved through
+# these entries; the runtime exposes stable product ids while keeping legacy
+# provider names unchanged. This section is optional: when absent the
+# generate-index tool embeds its built-in default directory.
+identity:
+  entries:
+  - id: amazon-cloudfront
+    vendor: amazon
+    product: cloudfront
+    aliases: [cloudfront]
+    categories: [cdn]
+  - id: amazon-aws
+    vendor: amazon
+    product: aws
+    aliases: [amazon, aws]
+  - id: google-cloud-cdn
+    vendor: google
+    product: cloud-cdn
+    aliases: [google]
+    categories: [cdn]
+  - id: google-cloud
+    vendor: google
+    product: cloud-platform
+    aliases: [google]
+    categories: [cloud]
+  - id: cloudflare
+    vendor: cloudflare
+    product: cloudflare
+    aliases: [cloudflare]
+  - id: imperva-incapsula
+    vendor: imperva
+    product: incapsula
+    aliases: [incapsula, imperva]
+  - id: f5-distributed-cloud
+    vendor: f5
+    product: distributed-cloud
+    aliases: [f5]
+  - id: f5-bigip
+    vendor: f5
+    product: big-ip
+  - id: akamai
+    vendor: akamai
+    product: akamai
+    aliases: [akamai]
+  - id: fastly
+    vendor: fastly
+    product: fastly
+    aliases: [fastly]
+  - id: microsoft-azure
+    vendor: microsoft
+    product: azure
+    aliases: [azure]
+  - id: microsoft-office365
+    vendor: microsoft
+    product: office365
+    aliases: [office365]
+  - id: huawei-cdn
+    vendor: huawei
+    product: cdn
+    aliases: [huawei]
+    categories: [cdn]
+  - id: huawei-waf
+    vendor: huawei
+    product: waf
+    aliases: [huawei-waf]
+  - id: qihoo360-cdn
+    vendor: qihoo360
+    product: cdn
+    aliases: [360-cdn, qianxin-360-cdn, qihoo-360-cdn]
+  - id: qianxin-waf
+    vendor: qianxin
+    product: waf
+    aliases: [qianxin]
+  - id: qianxin-legendsec-waf
+    vendor: qianxin
+    product: legendsec-waf
+    aliases: [legendsec]
+  - id: alibaba-aliyun
+    vendor: alibaba
+    product: aliyun
+    aliases: [aliyun]
+  - id: tencent-cdn
+    vendor: tencent
+    product: cdn
+    aliases: [tencent]
+  - id: baidu-cdn
+    vendor: baidu
+    product: cdn
+    aliases: [baidu]
+  - id: wangsu-cdn
+    vendor: wangsu
+    product: cdn
+    aliases: [wangsu]
+  - id: yundun
+    vendor: yundun
+    product: yundun
+    aliases: [yundun]
+  - id: jiasule
+    vendor: jiasule
+    product: jiasule
+    aliases: [jiasule]
+  - id: arvancloud
+    vendor: arvancloud
+    product: arvancloud
+    aliases: [arvancloud]
+  - id: qrator
+    vendor: qrator
+    product: qrator
+    aliases: [qrator]
+  - id: edgecast
+    vendor: edgecast
+    product: edgecast
+    aliases: [edgecast]
+  - id: qiniu
+    vendor: qiniu
+    product: qiniu
+    aliases: [qiniu]
+  - id: upyun
+    vendor: upyun
+    product: upyun
+    aliases: [upyun]
+  - id: jdcloud
+    vendor: jdcloud
+    product: jdcloud
+    aliases: [jdcloud]
+  - id: baishan
+    vendor: baishan
+    product: baishan
+    aliases: [baishan]
+  - id: dnion
+    vendor: dnion
+    product: dnion
+    aliases: [dnion]
+  - id: wangdi
+    vendor: wangdi
+    product: wangdi
+    aliases: [wangdi]
+  - id: cndns
+    vendor: cndns
+    product: cndns
+    aliases: [cndns]
+  - id: dbappsecurity
+    vendor: dbappsecurity
+    product: dbappsecurity
+    aliases: [dbappsecurity]
+  - id: sangfor
+    vendor: sangfor
+    product: sangfor
+    aliases: [sangfor]
+  - id: nsfocus
+    vendor: nsfocus
+    product: nsfocus
+    aliases: [nsfocus]
+  - id: bluedon
+    vendor: bluedon
+    product: bluedon
+    aliases: [bluedon]
+  - id: 15cdn
+    vendor: 15cdn
+    product: 15cdn
+    aliases: [15cdn]
+  - id: cafe24
+    vendor: cafe24
+    product: cafe24
+    aliases: [cafe24]
+  - id: cdnetworks
+    vendor: cdnetworks
+    product: cdnetworks
+    aliases: [cdnetworks]
+  - id: gcore
+    vendor: gcore
+    product: gcore
+    aliases: [gcore]
+  - id: gocache
+    vendor: gocache
+    product: gocache
+    aliases: [gocache]
+  - id: kinx
+    vendor: kinx
+    product: kinx
+    aliases: [kinx]
+  - id: lgtelecom
+    vendor: lgtelecom
+    product: lgtelecom
+    aliases: [lgtelecom]
+  - id: skbroadband
+    vendor: skbroadband
+    product: skbroadband
+    aliases: [skbroadband]
+  - id: gabia
+    vendor: gabia
+    product: gabia
+    aliases: [gabia]
+  - id: hostway
+    vendor: hostway
+    product: hostway
+    aliases: [hostway]
+  - id: ktcloud
+    vendor: ktcloud
+    product: ktcloud
+    aliases: [ktcloud]
+  - id: navercloud
+    vendor: navercloud
+    product: navercloud
+    aliases: [navercloud]
+  - id: nhncloud
+    vendor: nhncloud
+    product: nhncloud
+    aliases: [nhncloud]
+  - id: oracle-cloud
+    vendor: oracle
+    product: cloud
+    aliases: [oracle]
+  - id: zscaler
+    vendor: zscaler
+    product: zscaler
+    aliases: [zscaler]
+  - id: sucuri
+    vendor: sucuri
+    product: sucuri
+    aliases: [sucuri]
+  - id: reblaze
+    vendor: reblaze
+    product: reblaze
+    aliases: [reblaze]
+  - id: stackpath
+    vendor: stackpath
+    product: stackpath
+    aliases: [stackpath]
+  - id: bunny-cdn
+    vendor: bunny
+    product: cdn
+    aliases: [bunny, bunnycdn]
+  - id: cdn77
+    vendor: cdn77
+    product: cdn77
+    aliases: [cdn77]
+  - id: keycdn
+    vendor: keycdn
+    product: keycdn
+    aliases: [keycdn]
+  - id: vercel
+    vendor: vercel
+    product: vercel
+    aliases: [vercel]
+  - id: netlify
+    vendor: netlify
+    product: netlify
+    aliases: [netlify]
+  - id: cachefly
+    vendor: cachefly
+    product: cachefly
+    aliases: [cachefly]
+  - id: limelight
+    vendor: limelight
+    product: limelight
+    aliases: [limelight]
+  - id: ddos-guard
+    vendor: ddos-guard
+    product: ddos-guard
+    aliases: [ddos-guard]
+  - id: section-io
+    vendor: section.io
+    product: section.io
+    aliases: [section.io]
+  suffixes:
+    cloudfront.net: amazon-cloudfront
+    amazonaws.com: amazon-aws
+    edgesuite.net: akamai
+  technologies:
+    cloudfront: amazon-cloudfront
+    azure cdn: microsoft-azure
+    f5 big-ip: f5-bigip
+    f5 big-ip access policy manager: f5-bigip
+    f5 big-ip local traffic manager: f5-bigip
+    f5 big-ip application security manager: f5-bigip
+    f5 distributed cloud: f5-distributed-cloud

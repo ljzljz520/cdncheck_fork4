@@ -57,6 +57,7 @@ type Client struct {
 	cdn          *providerScraper
 	waf          *providerScraper
 	cloud        *providerScraper
+	identity     *identityResolver
 	retriabledns *retryabledns.Client
 }
 
@@ -79,13 +80,31 @@ func NewWithOpts(MaxRetries int, resolvers []string) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
+	// The compiled dataset carries the identity directory; datasets built by
+	// older versions do not, in which case the built-in directory is used.
+	directory := MergeIdentityDirectories(DefaultIdentityDirectory(), generatedData.Identity)
+	resolver, err := newIdentityResolver(directory)
+	if err != nil {
+		resolver = defaultIdentityResolver
+	}
 	client := &Client{
 		cdn:          newProviderScraper(generatedData.CDN),
 		waf:          newProviderScraper(generatedData.WAF),
 		cloud:        newProviderScraper(generatedData.Cloud),
+		identity:     resolver,
 		retriabledns: retryabledns,
 	}
 	return client, nil
+}
+
+// newResult builds an identity enriched result for a legacy provider name
+// and detection category.
+func (c *Client) newResult(name, itemType string) *Result {
+	return &Result{
+		Name:     name,
+		Type:     itemType,
+		Identity: c.identity.resolve(name, itemType),
+	}
 }
 
 // CheckCDN checks if an IP is contained in the cdn denylist
@@ -118,6 +137,49 @@ func (c *Client) Check(ip net.IP) (matched bool, value string, itemType string, 
 		return matched, value, "cloud", nil
 	}
 	return false, "", "", err
+}
+
+// CheckCDNResult is the identity enriched variant of CheckCDN. The returned
+// Result.Name keeps the legacy provider value for backward compatibility.
+func (c *Client) CheckCDNResult(ip net.IP) (matched bool, result *Result, err error) {
+	matched, value, err := c.cdn.Match(ip)
+	if matched {
+		result = c.newResult(value, "cdn")
+	}
+	return matched, result, err
+}
+
+// CheckWAFResult is the identity enriched variant of CheckWAF.
+func (c *Client) CheckWAFResult(ip net.IP) (matched bool, result *Result, err error) {
+	matched, value, err := c.waf.Match(ip)
+	if matched {
+		result = c.newResult(value, "waf")
+	}
+	return matched, result, err
+}
+
+// CheckCloudResult is the identity enriched variant of CheckCloud.
+func (c *Client) CheckCloudResult(ip net.IP) (matched bool, result *Result, err error) {
+	matched, value, err := c.cloud.Match(ip)
+	if matched {
+		result = c.newResult(value, "cloud")
+	}
+	return matched, result, err
+}
+
+// CheckResult is the identity enriched variant of Check. It preserves the
+// cdn -> waf -> cloud fallback order and the legacy category determination.
+func (c *Client) CheckResult(ip net.IP) (matched bool, result *Result, err error) {
+	if matched, value, err := c.cdn.Match(ip); err == nil && matched && value != "" {
+		return true, c.newResult(value, "cdn"), nil
+	}
+	if matched, value, err := c.waf.Match(ip); err == nil && matched && value != "" {
+		return true, c.newResult(value, "waf"), nil
+	}
+	if matched, value, err := c.cloud.Match(ip); err == nil && matched && value != "" {
+		return true, c.newResult(value, "cloud"), nil
+	}
+	return false, nil, err
 }
 
 // Check Domain with fallback checks if domain belongs to one of CDN, WAF and Cloud . It is generic method for Checkxxx methods
@@ -185,6 +247,74 @@ func (c *Client) CheckDNSResponse(dnsResponse *retryabledns.DNSData) (matched bo
 		}
 	}
 	return false, "", "", err
+}
+
+// CheckDomainWithFallbackResult is the identity enriched variant of
+// CheckDomainWithFallback. It preserves the resolve then CNAME fallback order.
+func (c *Client) CheckDomainWithFallbackResult(domain string) (matched bool, result *Result, err error) {
+	dnsData, err := c.retriabledns.Resolve(domain)
+	if err != nil {
+		return false, nil, err
+	}
+	matched, result, err = c.CheckDNSResponseResult(dnsData)
+	if err != nil {
+		return false, nil, err
+	}
+	if matched {
+		return matched, result, nil
+	}
+	// resolve cname
+	dnsData, err = c.retriabledns.CNAME(domain)
+	if err != nil {
+		return false, nil, err
+	}
+	return c.CheckDNSResponseResult(dnsData)
+}
+
+// CheckDNSResponseResult is the identity enriched variant of
+// CheckDNSResponse. It preserves the AAAA -> A -> CNAME fallback order.
+func (c *Client) CheckDNSResponseResult(dnsResponse *retryabledns.DNSData) (matched bool, result *Result, err error) {
+	if dnsResponse.AAAA != nil {
+		for _, ip := range dnsResponse.AAAA {
+			ipAddr := net.ParseIP(ip)
+			if ipAddr == nil {
+				continue
+			}
+			matched, result, err := c.CheckResult(ipAddr)
+			if err != nil {
+				return false, nil, err
+			}
+			if matched {
+				return matched, result, nil
+			}
+		}
+	}
+	if dnsResponse.A != nil {
+		for _, ip := range dnsResponse.A {
+			ipAddr := net.ParseIP(ip)
+			if ipAddr == nil {
+				continue
+			}
+			matched, result, err := c.CheckResult(ipAddr)
+			if err != nil {
+				return false, nil, err
+			}
+			if matched {
+				return matched, result, nil
+			}
+		}
+	}
+	if dnsResponse.CNAME != nil {
+		matched, suffixResult, err := c.CheckSuffixResult(dnsResponse.CNAME...)
+		if err != nil {
+			return false, nil, err
+		}
+		if matched {
+			// for now checkSuffix only checks for wafs
+			return matched, suffixResult, nil
+		}
+	}
+	return false, nil, err
 }
 
 func (c *Client) GetDnsData(domain string) (*retryabledns.DNSData, error) {

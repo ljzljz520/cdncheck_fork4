@@ -17,6 +17,9 @@ type InputCompiled struct {
 	Cloud map[string][]string `yaml:"cloud,omitempty" json:"cloud,omitempty"`
 	// Common contains a list of suffixes for major sources
 	Common map[string][]string `yaml:"common,omitempty" json:"common,omitempty"`
+	// Identity contains the unified identity directory mapping every
+	// legacy provider name, suffix and technology to a stable product ID.
+	Identity *IdentityDirectory `yaml:"identity,omitempty" json:"identity,omitempty"`
 }
 
 // providerScraper is a structure for scraping providers

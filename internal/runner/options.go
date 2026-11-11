@@ -3,6 +3,7 @@ package runner
 import (
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/logrusorgru/aurora"
@@ -26,6 +27,11 @@ type Output struct {
 	CloudName string    `json:"cloud_name,omitempty"`
 	Waf       bool      `json:"waf,omitempty"`
 	WafName   string    `json:"waf_name,omitempty"`
+	// ProductID is the stable product identifier from the unified identity
+	// directory. Vendor/Product carry the vendor vs concrete product split.
+	ProductID string `json:"product_id,omitempty"`
+	Vendor    string `json:"vendor,omitempty"`
+	Product   string `json:"product,omitempty"`
 	itemType  string
 }
 
@@ -123,15 +129,15 @@ func readFlags() (*Options, error) {
 	)
 
 	flagSet.CreateGroup("matcher", "MATCHER",
-		flagSet.StringSliceVarP(&opts.MatchCdn, "match-cdn", "mcdn", nil, fmt.Sprintf("match host with specified cdn provider (%s)", cdncheck.DefaultCDNProviders), goflags.CommaSeparatedStringSliceOptions),
-		flagSet.StringSliceVarP(&opts.MatchCloud, "match-cloud", "mcloud", nil, fmt.Sprintf("match host with specified cloud provider (%s)", cdncheck.DefaultCloudProviders), goflags.CommaSeparatedStringSliceOptions),
-		flagSet.StringSliceVarP(&opts.MatchWaf, "match-waf", "mwaf", nil, fmt.Sprintf("match host with specified waf provider (%s)", cdncheck.DefaultWafProviders), goflags.CommaSeparatedStringSliceOptions),
+		flagSet.StringSliceVarP(&opts.MatchCdn, "match-cdn", "mcdn", nil, fmt.Sprintf("match host with specified cdn provider, legacy names (%s) or stable product ids (%s)", cdncheck.DefaultCDNProviders, strings.Join(cdncheck.DefaultCDNProductIDs(), ", ")), goflags.CommaSeparatedStringSliceOptions),
+		flagSet.StringSliceVarP(&opts.MatchCloud, "match-cloud", "mcloud", nil, fmt.Sprintf("match host with specified cloud provider, legacy names (%s) or stable product ids (%s)", cdncheck.DefaultCloudProviders, strings.Join(cdncheck.DefaultCloudProductIDs(), ", ")), goflags.CommaSeparatedStringSliceOptions),
+		flagSet.StringSliceVarP(&opts.MatchWaf, "match-waf", "mwaf", nil, fmt.Sprintf("match host with specified waf provider, legacy names (%s) or stable product ids (%s)", cdncheck.DefaultWafProviders, strings.Join(cdncheck.DefaultWAFProductIDs(), ", ")), goflags.CommaSeparatedStringSliceOptions),
 	)
 
 	flagSet.CreateGroup("filter", "FILTER",
-		flagSet.StringSliceVarP(&opts.FilterCdn, "filter-cdn", "fcdn", nil, fmt.Sprintf("filter host with specified cdn provider (%s)", cdncheck.DefaultCDNProviders), goflags.CommaSeparatedStringSliceOptions),
-		flagSet.StringSliceVarP(&opts.FilterCloud, "filter-cloud", "fcloud", nil, fmt.Sprintf("filter host with specified cloud provider (%s)", cdncheck.DefaultCloudProviders), goflags.CommaSeparatedStringSliceOptions),
-		flagSet.StringSliceVarP(&opts.FilterWaf, "filter-waf", "fwaf", nil, fmt.Sprintf("filter host with specified waf provider (%s)", cdncheck.DefaultWafProviders), goflags.CommaSeparatedStringSliceOptions),
+		flagSet.StringSliceVarP(&opts.FilterCdn, "filter-cdn", "fcdn", nil, fmt.Sprintf("filter host with specified cdn provider, legacy names (%s) or stable product ids (%s)", cdncheck.DefaultCDNProviders, strings.Join(cdncheck.DefaultCDNProductIDs(), ", ")), goflags.CommaSeparatedStringSliceOptions),
+		flagSet.StringSliceVarP(&opts.FilterCloud, "filter-cloud", "fcloud", nil, fmt.Sprintf("filter host with specified cloud provider, legacy names (%s) or stable product ids (%s)", cdncheck.DefaultCloudProviders, strings.Join(cdncheck.DefaultCloudProductIDs(), ", ")), goflags.CommaSeparatedStringSliceOptions),
+		flagSet.StringSliceVarP(&opts.FilterWaf, "filter-waf", "fwaf", nil, fmt.Sprintf("filter host with specified waf provider, legacy names (%s) or stable product ids (%s)", cdncheck.DefaultWafProviders, strings.Join(cdncheck.DefaultWAFProductIDs(), ", ")), goflags.CommaSeparatedStringSliceOptions),
 	)
 
 	flagSet.CreateGroup("output", "OUTPUT",

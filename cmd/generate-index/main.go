@@ -85,6 +85,10 @@ func process() error {
 		}
 		data.Cloud = compiled.Cloud
 	}
+	if compiled.Identity != nil {
+		fmt.Printf("[identity] Embedded %d identity entries\n", len(compiled.Identity.Entries))
+		data.Identity = compiled.Identity
+	}
 	jsonData, err := json.Marshal(data)
 	if err != nil {
 		return errors.Wrap(err, "could not marshal json")

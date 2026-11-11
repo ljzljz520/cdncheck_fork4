@@ -101,6 +101,13 @@ func (c *Categories) Compile(options *Options) (*cdncheck.InputCompiled, error) 
 		log.Printf("[err] exclude google cloud from cdn: %s\n", err)
 		errs = append(errs, fmt.Errorf("exclude google cloud from cdn: %w", err))
 	}
+	// Embed the unified identity directory into the compiled dataset so the
+	// runtime client is self-describing. Provider config overrides take
+	// precedence over the built-in default directory.
+	compiled.Identity = cdncheck.MergeIdentityDirectories(cdncheck.DefaultIdentityDirectory(), c.Identity)
+	if err := cdncheck.ValidateIdentityDirectory(compiled.Identity); err != nil {
+		errs = append(errs, fmt.Errorf("identity directory: %w", err))
+	}
 	return compiled, errors.Join(errs...)
 }
 

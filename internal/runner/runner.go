@@ -209,18 +209,18 @@ func (r *Runner) processInputItemSingle(item string, output chan Output) {
 	}
 
 	var matched bool
-	var provider, itemType string
+	var result *cdncheck.Result
 	var err error
 
 	var targetIp string
 	if iputils.IsIP(item) {
-		matched, provider, itemType, err = r.cdnclient.Check(net.ParseIP(item))
+		matched, result, err = r.cdnclient.CheckResult(net.ParseIP(item))
 		targetIp = item
 	} else {
-		matched, provider, itemType, err = r.cdnclient.CheckDomainWithFallback(item)
-		dnsData, err := r.cdnclient.GetDnsData(item)
+		matched, result, err = r.cdnclient.CheckDomainWithFallbackResult(item)
+		dnsData, dnsErr := r.cdnclient.GetDnsData(item)
 
-		if err == nil {
+		if dnsErr == nil {
 			if len(dnsData.AAAA) > 0 {
 				targetIp = dnsData.AAAA[0]
 			} else if len(dnsData.A) > 0 {
@@ -230,6 +230,17 @@ func (r *Runner) processInputItemSingle(item string, output chan Output) {
 	}
 	if err != nil && r.options.Verbose {
 		gologger.Error().Msgf("Could not check domain cdn %s: %s", item, err)
+	}
+
+	provider, itemType := "", ""
+	if result != nil {
+		provider = result.Name
+		itemType = result.Type
+		if result.Identity != nil {
+			data.ProductID = result.Identity.ID
+			data.Vendor = result.Identity.Vendor
+			data.Product = result.Identity.Product
+		}
 	}
 
 	data.itemType = itemType
@@ -254,10 +265,10 @@ func (r *Runner) processInputItemSingle(item string, output chan Output) {
 		data.Waf = matched
 		data.WafName = provider
 	}
-	if skipped := filterIP(r.options, data); skipped {
+	if skipped := filterIP(r.options, r.cdnclient, data); skipped {
 		return
 	}
-	if matched := matchIP(r.options, data); !matched {
+	if matched := matchIP(r.options, r.cdnclient, data); !matched {
 		return
 	}
 	switch {
@@ -272,70 +283,59 @@ func (r *Runner) processInputItemSingle(item string, output chan Output) {
 	}
 }
 
-func matchIP(options *Options, data Output) bool {
-	if len(options.MatchCdn) == 0 && len(options.MatchCloud) == 0 && len(options.MatchWaf) == 0 {
+// identityTokenMatch reports whether a user supplied match/filter token
+// applies to a detection. Tokens may be legacy provider names or stable
+// product ids/aliases from the identity directory; exact legacy matching is
+// always kept as a fallback for names absent from the directory.
+func identityTokenMatch(client *cdncheck.Client, token, legacyName, itemType string) bool {
+	if token == legacyName {
 		return true
 	}
-	if len(options.MatchCdn) > 0 && data.itemType == "cdn" {
-		matched := false
-		for _, filter := range options.MatchCdn {
-			if filter == data.CdnName {
-				matched = true
-			}
-		}
-		if matched {
-			return true
-		}
+	tokenIdentity, tokenOK := client.IdentityOf(token)
+	detectedIdentity, detectedOK := client.IdentityFor(legacyName, itemType)
+	if tokenOK && detectedOK && tokenIdentity.ID == detectedIdentity.ID {
+		return true
 	}
-	if len(options.MatchCloud) > 0 && data.itemType == "cloud" {
-		matched := false
-		for _, filter := range options.MatchCloud {
-			if filter == data.CloudName {
-				matched = true
-			}
-		}
-		if matched {
-			return true
-		}
-	}
-	if len(options.MatchWaf) > 0 && data.itemType == "waf" {
-		matched := false
-		for _, filter := range options.MatchWaf {
-			if filter == data.WafName {
-				matched = true
-			}
-		}
-		if matched {
+	return false
+}
+
+func hasMatchingToken(client *cdncheck.Client, tokens []string, legacyName, itemType string) bool {
+	for _, token := range tokens {
+		if identityTokenMatch(client, token, legacyName, itemType) {
 			return true
 		}
 	}
 	return false
 }
 
-func filterIP(options *Options, data Output) bool {
+func matchIP(options *Options, client *cdncheck.Client, data Output) bool {
+	if len(options.MatchCdn) == 0 && len(options.MatchCloud) == 0 && len(options.MatchWaf) == 0 {
+		return true
+	}
+	if len(options.MatchCdn) > 0 && data.itemType == "cdn" && hasMatchingToken(client, options.MatchCdn, data.CdnName, "cdn") {
+		return true
+	}
+	if len(options.MatchCloud) > 0 && data.itemType == "cloud" && hasMatchingToken(client, options.MatchCloud, data.CloudName, "cloud") {
+		return true
+	}
+	if len(options.MatchWaf) > 0 && data.itemType == "waf" && hasMatchingToken(client, options.MatchWaf, data.WafName, "waf") {
+		return true
+	}
+	return false
+}
+
+func filterIP(options *Options, client *cdncheck.Client, data Output) bool {
 	if len(options.FilterCdn) == 0 && len(options.FilterCloud) == 0 && len(options.FilterWaf) == 0 {
 		return false
 	}
-	if len(options.FilterCdn) > 0 && data.itemType == "cdn" {
-		for _, filter := range options.FilterCdn {
-			if filter == data.CdnName {
-				return true
-			}
-		}
+	if len(options.FilterCdn) > 0 && data.itemType == "cdn" && hasMatchingToken(client, options.FilterCdn, data.CdnName, "cdn") {
+		return true
 	}
-	if len(options.FilterCloud) > 0 && data.itemType == "cloud" {
-		for _, filter := range options.FilterCloud {
-			if filter == data.CloudName {
-				return true
-			}
-		}
+	if len(options.FilterCloud) > 0 && data.itemType == "cloud" && hasMatchingToken(client, options.FilterCloud, data.CloudName, "cloud") {
+		return true
 	}
-	if len(options.FilterWaf) > 0 && data.itemType == "waf" {
-		for _, filter := range options.FilterWaf {
-			if filter == data.WafName {
-				return true
-			}
-		}
+	if len(options.FilterWaf) > 0 && data.itemType == "waf" && hasMatchingToken(client, options.FilterWaf, data.WafName, "waf") {
+		return true
 	}
 	return false
 }
